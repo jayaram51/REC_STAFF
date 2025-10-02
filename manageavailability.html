@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Food Availability</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Smooth card hover */
+    .food-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .food-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    /* Custom toggle switch */
+    input[type="checkbox"].availabilityToggle {
+        appearance: none;
+        width: 40px;
+        height: 20px;
+        background: #ddd;
+        border-radius: 9999px;
+        position: relative;
+        outline: none;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    input[type="checkbox"].availabilityToggle:checked {
+        background: #4f46e5; /* Indigo */
+    }
+    input[type="checkbox"].availabilityToggle::after {
+        content: '';
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        transition: transform 0.3s;
+    }
+    input[type="checkbox"].availabilityToggle:checked::after {
+        transform: translateX(20px);
+    }
+</style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen p-6">
+
+<h1 class="text-4xl font-extrabold mb-8 text-center text-gray-700">🍽️ Food Availability Manager</h1>
+
+<div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div id="menuList" class="space-y-6"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// 🔹 Fourth Firebase config
+const fourthFirebaseConfig = {
+  apiKey: "AIzaSyAO3rj5BVnuI0xgvVypjGSwCqZuiPiLIIE",
+  authDomain: "checkavailability-4daf3.firebaseapp.com",
+  databaseURL: "https://checkavailability-4daf3-default-rtdb.firebaseio.com",
+  projectId: "checkavailability-4daf3",
+  storageBucket: "checkavailability-4daf3.firebasestorage.app",
+  messagingSenderId: "12645745047",
+  appId: "1:12645745047:web:967328e3e812e412cf44d2",
+  measurementId: "G-RV8EE97GJ4"
+};
+const fourthApp = initializeApp(fourthFirebaseConfig, "fourthApp");
+const fourthDB = getDatabase(fourthApp);
+
+// Menu Items
+const menuItems = [
+    {name:"Puri"}, {name:"Idly"}, {name:"Dosa"}, {name:"Onion Dosa"},
+    {name:"Fried Rice"}, {name:"Chicken Fried Rice"}, {name:"Veg Noodles"}, {name:"Chicken Noodles"},
+    {name:"Samosa"}, {name:"Veg Puff"}, {name:"Egg Puff"}, {name:"Lays"},
+    {name:"Mountain Dew"}, {name:"Thumbs-up"}, {name:"Badam Milk"}, {name:"Coca-cola"}
+];
+
+const menuList = document.getElementById('menuList');
+
+// Render menu
+async function renderMenu() {
+    menuList.innerHTML = '';
+    for (let item of menuItems) {
+        let snapshot = await get(ref(fourthDB, `availability/${item.name}`));
+        let available = snapshot.exists() ? snapshot.val() : false;
+
+        const div = document.createElement('div');
+        div.className = "food-card flex justify-between items-center p-5 rounded-2xl shadow-lg bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100";
+
+        div.innerHTML = `
+            <span class="text-lg font-bold text-gray-800">${item.name}</span>
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <span class="text-gray-600 font-medium text-sm">Available</span>
+                <input type="checkbox" ${available ? 'checked' : ''} class="availabilityToggle" data-name="${item.name}" />
+            </label>
+        `;
+        menuList.appendChild(div);
+    }
+
+    // Toggle availability event
+    document.querySelectorAll('.availabilityToggle').forEach(toggle => {
+        toggle.addEventListener('change', async (e) => {
+            const itemName = e.target.dataset.name;
+            const isAvailable = e.target.checked;
+            try {
+                await set(ref(fourthDB, `availability/${itemName}`), isAvailable);
+                // Small feedback on toggle
+                e.target.closest('.food-card').classList.add('ring-2', 'ring-indigo-300');
+                setTimeout(()=>e.target.closest('.food-card').classList.remove('ring-2','ring-indigo-300'), 400);
+            } catch(err) {
+                console.error(err);
+                alert("Error updating availability!");
+            }
+        });
+    });
+}
+
+renderMenu();
+</script>
+
+</body>
+</html>

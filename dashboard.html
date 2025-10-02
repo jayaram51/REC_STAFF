@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-4xl mx-auto px-6 py-6">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <span class="text-white text-3xl">🍽️</span>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900">Kitchen Management Dashboard</h1>
+                <p class="text-gray-600 mt-2">Select a section to manage</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="max-w-4xl mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <!-- Kitchen Orders Button -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="bg-gradient-to-r from-orange-500 to-red-500 p-8 text-center">
+                    <span class="text-6xl mb-4 block">📋</span>
+                    <h2 class="text-2xl font-bold text-white">Kitchen Orders</h2>
+                    <p class="text-orange-100 mt-2">Manage incoming orders</p>
+                </div>
+                <div class="p-6">
+                    <button id="kitchenOrdersBtn" class="w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-4 rounded-lg font-semibold text-lg transition-colors transform hover:scale-105">
+                        Open Kitchen Orders
+                    </button>
+                </div>
+            </div>
+
+            <!-- Verify Student Payments Button -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-500 p-8 text-center">
+                    <span class="text-6xl mb-4 block">💳</span>
+                    <h2 class="text-2xl font-bold text-white">Student Payments</h2>
+                    <p class="text-green-100 mt-2">Verify payment status</p>
+                </div>
+                <div class="p-6">
+                    <button id="verifyPaymentsBtn" class="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-lg font-semibold text-lg transition-colors transform hover:scale-105">
+                        Verify Payments
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manage Food Availability Button -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="bg-gradient-to-r from-purple-500 to-indigo-500 p-8 text-center">
+                    <span class="text-6xl mb-4 block">🍛</span>
+                    <h2 class="text-2xl font-bold text-white">Food Availability</h2>
+                    <p class="text-purple-100 mt-2">Manage menu items</p>
+                </div>
+                <div class="p-6">
+                    <button id="manageFoodBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-6 py-4 rounded-lg font-semibold text-lg transition-colors transform hover:scale-105">
+                        Manage Food
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+
+    <script>
+        // Button click handlers - Update the file paths below
+        document.getElementById('kitchenOrdersBtn').addEventListener('click', function() {
+            // Replace 'kitchen-orders.html' with your actual file path
+            window.open('Kitchenorders.html', '_blank');
+        });
+
+        document.getElementById('verifyPaymentsBtn').addEventListener('click', function() {
+            // Replace 'verify-payments.html' with your actual file path
+            window.open('verifypayment.html', '_blank');
+        });
+
+        document.getElementById('manageFoodBtn').addEventListener('click', function() {
+            // Replace 'manage-food.html' with your actual file path
+            window.open('manageavailability.html', '_blank');
+        });
+
+        // Add click animation to all buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9882ce47471c7e72',t:'MTc1OTM5MzQ5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

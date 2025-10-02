@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verified Orders - Firebase</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+  #ordersContainer { max-height: 80vh; overflow-y: auto; }
+  #ordersContainer::-webkit-scrollbar { width: 8px; }
+  #ordersContainer::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 4px; }
+  .notification { transition: all 0.3s ease; }
+</style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+
+<div class="container mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="bg-white rounded-xl shadow-lg p-6 mb-6 sticky top-4 z-10">
+    <h1 class="text-3xl font-bold text-gray-800 mb-1">Verified Orders</h1>
+  </div>
+
+  <!-- Orders Container -->
+  <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+  <!-- Loading -->
+  <div id="loadingState" class="text-center py-12">
+    <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-4 border-indigo-600"></div>
+    <p class="mt-4 text-gray-600">Loading orders...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div id="emptyState" class="hidden text-center py-12">
+    <div class="text-gray-400 text-7xl mb-4">📦</div>
+    <h3 class="text-2xl font-semibold text-gray-600 mb-2">No Orders Found</h3>
+    <p class="text-gray-500 text-lg">There are no verified orders at the moment.</p>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getDatabase, ref, onValue, update, push, off } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+// ---------- Second Firebase (Verified Orders) ----------
+const secondFirebaseConfig = {
+  apiKey: "AIzaSyCN5ngY-q2DFfce2Q-Ju2WtreemecrrGkQ",
+  authDomain: "staff-e61b9.firebaseapp.com",
+  databaseURL: "https://staff-e61b9-default-rtdb.firebaseio.com",
+  projectId: "staff-e61b9",
+  storageBucket: "staff-e61b9.firebasestorage.app",
+  messagingSenderId: "532002565855",
+  appId: "1:532002565855:web:811780a75dcc57b85a036a",
+  measurementId: "G-642VKD43HX"
+};
+const secondApp = initializeApp(secondFirebaseConfig, "secondApp");
+const secondDB = getDatabase(secondApp);
+const verifiedOrdersRef = ref(secondDB, 'verifiedOrders');
+
+// ---------- Third Firebase (Completed Orders) ----------
+const thirdFirebaseConfig = {
+  apiKey: "AIzaSyCGMvFT7bJjQVJGlU3qZdfZEq9W_jZpH8g",
+  authDomain: "checkorder-52699.firebaseapp.com",
+  databaseURL: "https://checkorder-52699-default-rtdb.firebaseio.com",
+  projectId: "checkorder-52699",
+  storageBucket: "checkorder-52699.firebasestorage.app",
+  messagingSenderId: "1001364469231",
+  appId: "1:1001364469231:web:46a2cd67ad8a738e7ef21a",
+  measurementId: "G-5P7MDHK2DK"
+};
+const thirdApp = initializeApp(thirdFirebaseConfig, "thirdApp");
+const thirdDB = getDatabase(thirdApp);
+const completedOrdersRef = ref(thirdDB, 'completedOrders');
+
+// ---------------- Load Verified Orders ----------------
+let ordersData = {};
+function loadOrders() {
+  const loadingState = document.getElementById('loadingState');
+  const emptyState = document.getElementById('emptyState');
+  const ordersContainer = document.getElementById('ordersContainer');
+
+  loadingState.style.display = 'block';
+  emptyState.classList.add('hidden');
+
+  onValue(verifiedOrdersRef, snapshot => {
+    loadingState.style.display = 'none';
+    if (snapshot.exists()) {
+      ordersData = snapshot.val();
+      renderOrders(ordersData);
+    } else {
+      ordersContainer.innerHTML = '';
+      emptyState.classList.remove('hidden');
+    }
+  }, error => {
+    console.error(error);
+    loadingState.style.display = 'none';
+    emptyState.classList.remove('hidden');
+  });
+}
+
+// ---------------- Render Orders ----------------
+function renderOrders(orders) {
+  const ordersContainer = document.getElementById('ordersContainer');
+  const entries = Object.entries(orders).map(([orderId, orderData]) => `
+    <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 border-green-500 transition hover:shadow-xl hover:-translate-y-1">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800 mb-2 md:mb-0">Order ID: ${orderId}</h2>
+        <span class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">✓ Verified</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div><span class="font-medium">Total Amount:</span> ₹${orderData.totalAmount}</div>
+      </div>
+
+      <div class="border-t pt-4">
+        <h3 class="font-semibold text-gray-800 mb-3">Order Items:</h3>
+        <div class="space-y-2">
+          ${orderData.items.map(item => `
+            <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl hover:bg-gray-100 transition-all">
+              <div class="flex-1">
+                <span class="font-medium text-gray-800">${item.name}</span>
+                <span class="text-gray-500 ml-2">× ${item.quantity}</span>
+              </div>
+              <div class="text-right">
+                <div class="font-semibold text-gray-800">₹${item.total}</div>
+                <div class="text-sm text-gray-500">₹${item.price} each</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="mt-4 text-right">
+        <button onclick="markCompleted('${orderId}')" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition">
+          Completed
+        </button>
+      </div>
+    </div>
+  `);
+  ordersContainer.innerHTML = entries.join('');
+}
+
+// ---------------- Button Action ----------------
+window.markCompleted = function(orderId) {
+  const orderData = ordersData[orderId];
+  if (!orderData) return alert("Order data not found!");
+
+  const newOrderRef = push(completedOrdersRef);
+  update(newOrderRef, { ...orderData, orderId: orderId, completed: true })
+    .then(() => {
+      showNotification(`Order #${orderId} sent to completed orders!`, 'success');
+    })
+    .catch(err => {
+      console.error(err);
+      showNotification(`Failed to send order #${orderId}.`, 'error');
+    });
+};
+
+// ---------------- Notifications ----------------
+function showNotification(message, type) {
+  const notification = document.createElement('div');
+  notification.className = `notification fixed top-4 right-4 px-6 py-3 rounded-xl shadow-lg z-50 ${
+    type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+  }`;
+  notification.innerHTML = message;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 3000);
+}
+
+// ---------------- Initialize ----------------
+loadOrders();
+window.addEventListener('beforeunload', () => { off(verifiedOrdersRef); });
+</script>
+</body>
+</html>

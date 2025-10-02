@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Management - Payment Verification</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  #ordersContainer {
+      max-height: 70vh;
+      overflow-y: auto;
+  }
+  #ordersContainer::-webkit-scrollbar {
+      width: 8px;
+  }
+  #ordersContainer::-webkit-scrollbar-thumb {
+      background-color: rgba(0,0,0,0.2);
+      border-radius: 4px;
+  }
+  .notification {
+      transition: all 0.3s ease;
+  }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 mb-8 text-white sticky top-4 z-10">
+        <h1 class="text-3xl font-bold mb-1">Order Management</h1>
+        <p class="text-indigo-100">Review and verify payment status for customer orders</p>
+    </div>
+
+    <!-- Orders List -->
+    <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Orders will be dynamically loaded here -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-indigo-600"></div>
+        <p class="mt-4 text-gray-600 text-lg font-medium">Loading orders...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-12">
+        <div class="text-gray-400 text-7xl mb-4">📦</div>
+        <h3 class="text-2xl font-semibold text-gray-600 mb-2">No Orders Found</h3>
+        <p class="text-gray-500 text-lg">There are no orders to display at the moment.</p>
+    </div>
+</div>
+
+<script>
+// --------------------- Primary Firebase ---------------------
+const firebaseConfig = {
+  apiKey: "AIzaSyDuZXZx7DCRitt_4E2XIOmknhqHEUTUXL0",
+  authDomain: "student-326fc.firebaseapp.com",
+  databaseURL: "https://student-326fc-default-rtdb.firebaseio.com",
+  projectId: "student-326fc",
+  storageBucket: "student-326fc.firebasestorage.app",
+  messagingSenderId: "583442488877",
+  appId: "1:583442488877:web:db583172fc4594a11122a4",
+  measurementId: "G-7RQDEMGJYG"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// --------------------- Secondary Firebase ---------------------
+const secondFirebaseConfig = {
+  apiKey: "AIzaSyCN5ngY-q2DFfce2Q-Ju2WtreemecrrGkQ",
+  authDomain: "staff-e61b9.firebaseapp.com",
+  databaseURL: "https://staff-e61b9-default-rtdb.firebaseio.com",
+  projectId: "staff-e61b9",
+  storageBucket: "staff-e61b9.firebasestorage.app",
+  messagingSenderId: "532002565855",
+  appId: "1:532002565855:web:811780a75dcc57b85a036a",
+  measurementId: "G-642VKD43HX"
+};
+const secondApp = firebase.initializeApp(secondFirebaseConfig, "secondApp");
+const secondDb = secondApp.database();
+
+// --------------------- Load Orders ---------------------
+function loadOrders() {
+    const loadingState = document.getElementById('loadingState');
+    const ordersContainer = document.getElementById('ordersContainer');
+    const emptyState = document.getElementById('emptyState');
+
+    db.ref('orders').once('value')
+    .then(snapshot => {
+        const ordersData = snapshot.val();
+        loadingState.style.display = 'none';
+
+        if (!ordersData) {
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        const ordersArray = Object.keys(ordersData).map(id => ({ id, ...ordersData[id] }));
+
+        ordersContainer.innerHTML = ordersArray.map(order => `
+            <div class="bg-white rounded-2xl shadow-md p-6 border-l-4 transition-all hover:shadow-xl hover:-translate-y-1 ${
+                order.status === 'verified' ? 'border-green-500' : 'border-yellow-500'
+            }">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+                    <div class="flex items-center mb-3 md:mb-0 space-x-3">
+                        <h2 class="text-xl font-bold text-gray-800">Order ID: ${order.id}</h2>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${
+                            order.status === 'verified' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }">${order.status === 'verified' ? '✓ Verified' : '⏳ Pending'}</span>
+                    </div>
+                    <button 
+                        onclick="verifyPayment('${order.id}')"
+                        class="px-5 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                            order.status === 'verified'
+                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg transform hover:-translate-y-0.5'
+                        }"
+                        ${order.status === 'verified' ? 'disabled' : ''}
+                    >
+                        ${order.status === 'verified' ? 'Payment Verified' : 'Verify Payment'}
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-gray-700">
+                    <div><span class="font-medium">Total Amount:</span> ₹${order.totalAmount}</div>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h3 class="font-semibold text-gray-800 mb-3">Order Items:</h3>
+                    <div class="space-y-2">
+                        ${order.items.map(item => `
+                            <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl hover:bg-gray-100 transition-all">
+                                <div class="flex-1">
+                                    <span class="font-medium text-gray-800">${item.name}</span>
+                                    <span class="text-gray-500 ml-2">× ${item.quantity}</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-semibold text-gray-800">₹${item.total}</div>
+                                    <div class="text-sm text-gray-500">₹${item.price} each</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-200 flex justify-between font-bold text-indigo-600 text-lg">
+                        <span>Total:</span>
+                        <span>₹${order.totalAmount}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(err => {
+        console.error(err);
+        loadingState.style.display = 'none';
+        emptyState.classList.remove('hidden');
+    });
+}
+
+// --------------------- Verify Payment ---------------------
+function verifyPayment(orderId) {
+    const button = document.querySelector(`[onclick="verifyPayment('${orderId}')"]`);
+    const orderElement = button.closest('.bg-white');
+
+    button.innerHTML = '<div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Verifying...';
+    button.disabled = true;
+
+    setTimeout(() => {
+        db.ref(`orders/${orderId}/status`).set('verified').then(() => {
+            db.ref(`orders/${orderId}`).once('value').then(snapshot => {
+                const orderData = snapshot.val();
+                secondDb.ref(`verifiedOrders/${orderId}`).set(orderData)
+                    .then(() => console.log("Order sent to second Firebase successfully"))
+                    .catch(err => console.error("Error sending to second Firebase:", err));
+            });
+
+            orderElement.classList.remove('border-yellow-500');
+            orderElement.classList.add('border-green-500');
+
+            const statusBadge = orderElement.querySelector('.px-3.py-1');
+            statusBadge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+            statusBadge.innerHTML = '✓ Verified';
+
+            button.className = 'px-5 py-2 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-500 cursor-not-allowed';
+            button.innerHTML = 'Payment Verified';
+
+            showNotification(`Payment for Order #${orderId} verified successfully!`, 'success');
+        });
+    }, 2000);
+}
+
+// --------------------- Notifications ---------------------
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification fixed top-4 right-4 px-6 py-3 rounded-xl shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    notification.innerHTML = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// --------------------- Init ---------------------
+document.addEventListener('DOMContentLoaded', loadOrders);
+
+</script>
+</body>
+</html>
